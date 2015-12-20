@@ -1,14 +1,14 @@
 FROM folsomlabs/base-nix
+RUN {
 
-# Git is most likely needed to build Runix apps
-RUN nix-env --install git
+    nix-env --install git
+    nix-collect-garbage --delete-old
 
-RUN nix-collect-garbage --delete-old
+    # Build the Runix test to populate the Nix store
+    # Do not GC after this
+    git clone https://gitlab.com/phunehehe/runix.git
+    ./runix/test.sh
+    rm --force --recursive runix
 
-# Build the Runix test to populate the Nix store
-# Do not GC after this
-RUN git clone https://gitlab.com/phunehehe/runix.git
-RUN ./runix/test.sh
-RUN rm --force --recursive runix
-
-RUN nix-store --optimise
+    nix-store --optimise
+}
