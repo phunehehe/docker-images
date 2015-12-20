@@ -4,7 +4,7 @@ FROM alpine
 ENV USER root
 
 # It also wants these
-RUN apk add --update bash curl ncdu \
+RUN apk add --update bash curl \
  && rm -fr /var/cache/apk/*
 
 # For the build-users-group hack see https://github.com/NixOS/nix/issues/697
@@ -25,3 +25,5 @@ RUN mkdir /etc/nix \
  && rm -fr runix \
  \
  && nix-store --optimise
+
+CMD bash --rcfile /nix/var/nix/profiles/default/etc/profile.d/nix.sh
