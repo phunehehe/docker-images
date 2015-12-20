@@ -1,5 +1,5 @@
 FROM folsomlabs/base-nix
-RUN set -efuxo pipefail \
+RUN set -efux \
  \
  && nix-env --install git \
  && nix-collect-garbage --delete-old \
