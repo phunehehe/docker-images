@@ -26,4 +26,4 @@ RUN mkdir /etc/nix \
  \
  && nix-store --optimise
 
-CMD bash --rcfile /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+RUN ln -s /nix/var/nix/profiles/default/etc/profile.d/nix.sh /root/.bashrc
