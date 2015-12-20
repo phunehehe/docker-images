@@ -9,4 +9,3 @@ RUN set -efux \
  && rm --force --recursive runix \
  \
  && nix-store --optimise
-}
