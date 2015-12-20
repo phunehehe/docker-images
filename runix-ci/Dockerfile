@@ -4,8 +4,8 @@ FROM alpine
 ENV USER root
 
 # It also wants these
-RUN apk add --update bash curl \
- && rm -fr /var/cache/apk
+RUN apk add --update bash curl ncdu \
+ && rm -fr /var/cache/apk/*
 
 # For the build-users-group hack see https://github.com/NixOS/nix/issues/697
 # /nix is created beforehand so that the script won't try to use sudo
