@@ -13,6 +13,10 @@ RUN mkdir /etc/nix \
  && echo 'build-users-group =' > /etc/nix/nix.conf \
  && mkdir /nix \
  && curl https://nixos.org/nix/install | sh \
- && . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+ && . /nix/var/nix/profiles/default/etc/profile.d/nix.sh \
+ && nix-channel --update \
+ && nix-env --upgrade \
+ && nix-collect-garbage --delete-old \
+ && nix-store --optimise
 
 RUN ln -s /nix/var/nix/profiles/default/etc/profile.d/nix.sh /root/.bashrc
