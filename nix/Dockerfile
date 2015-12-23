@@ -22,4 +22,4 @@ RUN mkdir /etc/nix \
 # Busybox's sh has
 # PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # It's convenient to hijack /usr/local/sbin because it doesn't exist
-RUN ln -fsT ~/.nix-profile/bin /usr/local/sbin
+RUN ln -fsT /nix/var/nix/profiles/default/bin /usr/local/sbin
