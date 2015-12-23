@@ -69,6 +69,7 @@ Vagrant.configure(2) do |config|
     echo deb https://apt.dockerproject.org/repo ubuntu-trusty main > /etc/apt/sources.list.d/docker.list
     apt-get update
     apt-get install --yes docker-engine linux-image-extra-$(uname -r)
+    apt-get purge --yes $(dpkg --list | awk '/(chef|puppet)/ {print $2}')
     if ! [[ -e /swapfile ]]
     then
       fallocate --length 10G /swapfile

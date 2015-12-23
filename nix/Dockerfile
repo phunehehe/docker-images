@@ -19,4 +19,7 @@ RUN mkdir /etc/nix \
  && nix-collect-garbage --delete-old \
  && nix-store --optimise
 
-RUN ln -s /nix/var/nix/profiles/default/etc/profile.d/nix.sh /root/.bashrc
+# Busybox's sh has
+# PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# It's convenient to hijack /usr/local/sbin because it doesn't exist
+RUN ln -fsT ~/.nix-profile/bin /usr/local/sbin
