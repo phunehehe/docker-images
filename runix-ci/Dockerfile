@@ -1,12 +1,11 @@
-FROM phunehehe/nix
+FROM alpine
 
-RUN nix-env --install git nss-cacert \
- && nix-collect-garbage --delete-old \
- && nix-store --optimise
+# bash for the script below
+# curl for https://github.com/NixOS/nixos-homepage/blob/9858d97a0a9283a778bd04f8de1d1a42b1241b16/nix/install.in#L31
+RUN apk add --update bash curl \
+ && rm -fr /var/cache/apk/*
 
-RUN mkdir -p /etc/ssl/certs \
- && ln -s /nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt /etc/ssl/certs
+COPY ./script.sh /script.sh
+RUN /script.sh
 
-RUN git clone https://gitlab.com/phunehehe/runix.git \
- && ./runix/test.sh \
- && rm -rf runix
+ENV BASH_ENV /nix/var/nix/profiles/default/etc/profile.d/nix.sh
