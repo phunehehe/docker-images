@@ -1,11 +1,14 @@
 FROM alpine
 
-# bash for the script below
-# curl for https://github.com/NixOS/nixos-homepage/blob/9858d97a0a9283a778bd04f8de1d1a42b1241b16/nix/install.in#L31
-RUN apk add --update bash curl \
- && rm -fr /var/cache/apk/*
-
-COPY ./script.sh /script.sh
-RUN /script.sh
-
 ENV BASH_ENV /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+
+ADD https://raw.githubusercontent.com/phunehehe/docker-images/master/scripts/install-nix.sh \
+    https://raw.githubusercontent.com/phunehehe/docker-images/master/scripts/install-git.sh \
+    https://raw.githubusercontent.com/phunehehe/docker-images/master/scripts/gc.sh \
+    https://raw.githubusercontent.com/phunehehe/docker-images/master/scripts/cache-runix.sh \
+    ./scripts/
+
+RUN chmod +x ./scripts/install-nix.sh && ./scripts/install-nix.sh \
+ && chmod +x ./scripts/install-git.sh && ./scripts/install-git.sh \
+ && chmod +x ./scripts/gc.sh && ./scripts/gc.sh \
+ && chmod +x ./scripts/cache-runix.sh && ./scripts/cache-runix.sh

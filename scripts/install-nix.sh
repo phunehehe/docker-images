@@ -1,5 +1,7 @@
-#!/usr/bin/env bash
-set -efuxo pipefail
+#!/usr/bin/env sh
+# ^ Not using bash here because we don't have it yet
+
+apk add --update-cache bash curl
 
 # https://github.com/NixOS/nix/issues/697
 mkdir /etc/nix
@@ -17,12 +19,3 @@ curl https://nixos.org/nix/install | sh
 
 nix-channel --update
 nix-env --upgrade
-nix-env --install git
-nix-collect-garbage --delete-old
-
-# Build Runix to cache dependencies (no more GC after this)
-git clone https://gitlab.com/phunehehe/runix.git
-./runix/test.sh
-rm -rf runix
-
-nix-store --optimise
