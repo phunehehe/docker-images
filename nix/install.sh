@@ -2,6 +2,7 @@
 # ^ Not using bash here because we don't have it yet
 
 apk add --update-cache bash curl
+rm -fr /var/cache/apk/*
 
 # https://github.com/NixOS/nix/issues/697
 mkdir /etc/nix
@@ -15,7 +16,9 @@ export USER
 mkdir /nix
 
 curl https://nixos.org/nix/install | sh
-. /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+. "$BASH_ENV"
 
 nix-channel --update
 nix-env --upgrade
+nix-collect-garbage --delete-old
+nix-store --optimise

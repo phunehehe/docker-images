@@ -1,2 +1,2 @@
 FROM phunehehe/nix
-VOLUME /nix/store
+VOLUME /nix
