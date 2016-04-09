@@ -16,8 +16,12 @@ export USER
 mkdir /nix
 
 curl https://nixos.org/nix/install | sh
+
+# BASH_ENV is defined in Dockerfile
+# shellcheck source=/dev/null
 . "$BASH_ENV"
 
+nix-channel --add https://nixos.org/channels/nixos-16.03/
 nix-channel --update
 nix-env --upgrade
 nix-collect-garbage --delete-old
