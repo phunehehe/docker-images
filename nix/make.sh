@@ -17,6 +17,7 @@ state_dir=$rootfs/nix/var/nix
 
 # Get the latest release, something like
 # nixexprs=https://nixos.org/releases/nixos/16.03/nixos-16.03.714.69420c5/nixexprs.tar.xz
+# FIXME: this does not seem to be cached
 nixexprs=$(
   curl --head --silent https://nixos.org/channels/nixos-16.03/nixexprs.tar.xz \
   | awk '/Location/ {print $2}' \
@@ -36,6 +37,10 @@ wanted_packages=(
   $cacert
   $($build bash)
   $($build nix)
+
+  # Needed to unpack nixexprs, see FIXME above
+  $($build gnutar)
+  $($build xz)
 )
 all_packages=(
   $(nix-store --query --requisites "${wanted_packages[@]}" \
