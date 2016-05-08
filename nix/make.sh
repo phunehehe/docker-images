@@ -77,9 +77,15 @@ mkdir --parents "$rootfs/etc/nix"
 echo 'build-users-group =' > "$rootfs/etc/nix/nix.conf"
 
 
+# Git doesn't like the empty /tmp
+tar --create --verbose --xz \
+    --directory "$rootfs" \
+    --file "$this_dir/rootfs.tar.xz" \
+    .
+
 echo "
 FROM scratch
-ADD rootfs /
+ADD rootfs.tar.xz /
 ENV NIX_PATH=nixpkgs=$nixexprs \
     PATH=/nix/var/nix/profiles/default/bin \
     SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
