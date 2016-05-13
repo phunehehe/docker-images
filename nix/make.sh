@@ -57,9 +57,10 @@ done
 nix-store --export "${all_packages[@]}" \
 | env NIX_STATE_DIR="$state_dir" nix-store --import
 
+nix-env --install "${wanted_packages[*]}" --profile "$state_dir/profiles/default"
+
 
 # (Bash) scripts want /usr/bin/env
-env=$(find_in_rootfs "$rootfs" env)
 mkdir --parents "$rootfs/usr/bin"
 $ln /nix/var/nix/profiles/default/bin/env "$rootfs/usr/bin/"
 
@@ -89,5 +90,4 @@ ENV NIX_PATH=nixpkgs=${nixexprs/$rootfs/} \
     PATH=/nix/var/nix/profiles/default/bin \
     SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
     USER=root
-RUN $env PATH=$bootstrap_path nix-env --install ${wanted_packages[*]}
 " > "$this_dir/Dockerfile"
