@@ -12,14 +12,14 @@ find_in_rootfs() {
 
 this_dir=$(cd "$(dirname "$0")" && pwd)
 rootfs=$this_dir/rootfs
-channel=nixos-16.03
+channel=$(git rev-parse --abbrev-ref HEAD)
 nixpkgs=$rootfs/$channel
 store_dir=$rootfs/nix/store
 state_dir=$rootfs/nix/var/nix
 
 # Get the latest release
 mkdir --parents "$rootfs"
-cp --recursive "$(readlink --canonicalize ~/.nix-defexpr/channels/$channel)" "$nixpkgs"
+cp --recursive "$(readlink --canonicalize "$HOME/.nix-defexpr/channels/$channel")" "$nixpkgs"
 
 build="nix-build --no-out-link $nixpkgs --attr"
 ln='ln --force --symbolic'
