@@ -12,16 +12,18 @@ find_in_rootfs() {
 
 this_dir=$(cd "$(dirname "$0")" && pwd)
 rootfs=$this_dir/rootfs
-channel=$(git rev-parse --abbrev-ref HEAD)
-nixpkgs=$rootfs/$channel
 store_dir=$rootfs/nix/store
 state_dir=$rootfs/nix/var/nix
 
-# Get the latest release
-mkdir --parents "$rootfs"
-cp --recursive "$(readlink --canonicalize "$HOME/.nix-defexpr/channels/$channel")" "$nixpkgs"
+channel=$(git rev-parse --abbrev-ref HEAD)
+channels_dir=$rootfs/root/channels
+nixexprs=$channels_dir/$channel
 
-build="nix-build --no-out-link $nixpkgs --attr"
+# Get the latest release
+mkdir --parents "$channels_dir"
+cp --recursive "$(readlink --canonicalize "$HOME/.nix-defexpr/channels/$channel")" "$nixexprs"
+
+build="nix-build --no-out-link $nixexprs --attr"
 ln='ln --force --symbolic'
 
 
@@ -36,6 +38,7 @@ wanted_packages=(
   # The closure for Nix includes these so we are repeating ourselves a
   # bit to make it easier to install them further down.
   $($build bash)
+  $($build coreutils)
 )
 
 all_packages=(
@@ -83,7 +86,7 @@ tar --create --verbose --xz \
 echo "
 FROM scratch
 ADD rootfs.tar.xz /
-ENV NIX_PATH=nixpkgs=/$channel \
+ENV NIX_PATH=nixpkgs=${nixexprs/$rootfs/} \
     PATH=/nix/var/nix/profiles/default/bin \
     SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
     USER=root
