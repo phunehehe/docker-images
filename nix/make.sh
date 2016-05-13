@@ -67,9 +67,8 @@ $ln /nix/var/nix/profiles/default/bin/env "$rootfs/usr/bin/"
 mkdir --parents "$rootfs/tmp"
 
 # RUN wants /bin/sh
-sh=$(find_in_rootfs "$rootfs" sh)
 mkdir --parents "$rootfs/bin"
-$ln "$sh" "$rootfs/bin/"
+$ln /nix/var/nix/profiles/default/bin/sh "$rootfs/bin/"
 
 # https://github.com/NixOS/nix/issues/697
 mkdir --parents "$rootfs/etc/nix"
