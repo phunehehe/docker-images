@@ -12,18 +12,16 @@ find_in_rootfs() {
 
 this_dir=$(cd "$(dirname "$0")" && pwd)
 rootfs=$this_dir/rootfs
+channel=nixos-16.03
+nixpkgs=$rootfs/$channel
 store_dir=$rootfs/nix/store
 state_dir=$rootfs/nix/var/nix
 
-# Get the latest release, something like
-# nixexprs=https://nixos.org/releases/nixos/16.03/nixos-16.03.714.69420c5/nixexprs.tar.xz
-# FIXME: this does not seem to be cached
-nixexprs=$(
-  curl --head --silent https://nixos.org/channels/nixos-16.03/nixexprs.tar.xz \
-  | awk '/Location/ {print $2}' \
-  | tr --delete '[:space:]')
+# Get the latest release
+mkdir --parents "$rootfs"
+cp --recursive "$(readlink --canonicalize ~/.nix-defexpr/channels/$channel)" "$nixpkgs"
 
-build="nix-build --no-out-link $nixexprs --attr"
+build="nix-build --no-out-link $nixpkgs --attr"
 ln='ln --force --symbolic'
 
 
@@ -31,17 +29,15 @@ ln='ln --force --symbolic'
 
 cacert=$($build cacert)
 
-# The closure for Nix includes Bash so we are repeating ourselves a bit
-# here. Makes it easier to install Bash further down.
 wanted_packages=(
   $cacert
-  $($build bash)
   $($build nix)
 
-  # Needed to unpack nixexprs, see FIXME above
-  $($build gnutar)
-  $($build xz)
+  # The closure for Nix includes these so we are repeating ourselves a
+  # bit to make it easier to install them further down.
+  $($build bash)
 )
+
 all_packages=(
   $(nix-store --query --requisites "${wanted_packages[@]}" \
   | sort --unique))
@@ -77,7 +73,8 @@ mkdir --parents "$rootfs/etc/nix"
 echo 'build-users-group =' > "$rootfs/etc/nix/nix.conf"
 
 
-# Git doesn't like the empty /tmp
+# Pack up (Git doesn't like empty dirs like /tmp so we can't just leave rootfs
+# as is)
 tar --create --verbose --xz \
     --directory "$rootfs" \
     --file "$this_dir/rootfs.tar.xz" \
@@ -86,11 +83,10 @@ tar --create --verbose --xz \
 echo "
 FROM scratch
 ADD rootfs.tar.xz /
-ENV NIX_PATH=nixpkgs=$nixexprs \
+ENV NIX_PATH=nixpkgs=/$channel \
     PATH=/nix/var/nix/profiles/default/bin \
     SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
     USER=root
 RUN $env PATH=$bootstrap_path \
-         SSL_CERT_FILE=$cacert/etc/ssl/certs/ca-bundle.crt \
          nix-env --install ${wanted_packages[*]}
 " > "$this_dir/Dockerfile"
