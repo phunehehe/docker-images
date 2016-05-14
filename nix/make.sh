@@ -2,38 +2,58 @@
 set -efuxo pipefail
 
 
-find_in_rootfs() {
-  rootfs=$1
-  name=$2
-  result=$(find "$rootfs" -name "$name")
-  echo "${result/$rootfs/}"
-}
-
+# Add nixpkgs
 
 this_dir=$(cd "$(dirname "$0")" && pwd)
 rootfs=$this_dir/rootfs
-store_dir=$rootfs/nix/store
-state_dir=$rootfs/nix/var/nix
-
 channel=$(git rev-parse --abbrev-ref HEAD)
-channels_dir=$rootfs/root/channels
-nixexprs=$channels_dir/$channel
 
-# Get the latest release
-mkdir --parents "$channels_dir"
-cp --recursive "$(readlink --canonicalize "$HOME/.nix-defexpr/channels/$channel")" "$nixexprs"
+channels_dir=$rootfs/root/channels
+mkdir='mkdir --parents'
+$mkdir "$channels_dir"
+
+nixexprs=$channels_dir/$channel
+cp --dereference --recursive "$HOME/.nix-defexpr/channels/$channel" "$nixexprs"
 
 build="nix-build --no-out-link $nixexprs --attr"
-ln='ln --force --symbolic'
+
+
+# Prepare chroot
+
+# https://github.com/NixOS/nix/issues/697
+$mkdir "$rootfs/etc/nix"
+echo 'build-users-group =' > "$rootfs/etc/nix/nix.conf"
+
+# nix-build wants /tmp
+$mkdir "$rootfs/tmp"
+
+my_chroot() {
+  mounts=(dev proc)
+
+  for m in "${mounts[@]}"
+  do
+    $mkdir "$rootfs/$m"
+    sudo mount --bind "/$m" "$rootfs/$m"
+  done
+
+  sudo chroot "$rootfs" "$@"
+
+  for m in "${mounts[@]}"
+  do sudo umount "$rootfs/$m"
+  done
+}
 
 
 # Populate the store
 
 cacert=$($build cacert)
 
+# Nix has multiple outputs, and `out` is not always the default one
+nix=$($build nix.out)
+
 wanted_packages=(
   $cacert
-  $($build nix)
+  $nix
 
   # The closure for Nix includes these so we are repeating ourselves a
   # bit to make it easier to install them further down.
@@ -45,36 +65,31 @@ all_packages=(
   $(nix-store --query --requisites "${wanted_packages[@]}" \
   | sort --unique))
 
-bootstrap_path=
-mkdir --parents "$store_dir"
+store_dir=$rootfs/nix/store
+$mkdir "$store_dir"
 for p in "${all_packages[@]}"
 do
-  bin=$p/bin
-  [[ -e $bin ]] && bootstrap_path=$bin:$bootstrap_path
   cp --recursive "$p" "$store_dir"/
 done
 
 nix-store --export "${all_packages[@]}" \
-| env NIX_STATE_DIR="$state_dir" nix-store --import
+| my_chroot "$nix/bin/nix-store" --import
 
-nix-env --install "${wanted_packages[*]}" --profile "$state_dir/profiles/default"
+my_chroot "$nix/bin/nix-env" --install "${wanted_packages[@]}"
 
 
 # (Bash) scripts want /usr/bin/env
-mkdir --parents "$rootfs/usr/bin"
+$mkdir "$rootfs/usr/bin"
+ln='ln --force --symbolic'
 $ln /nix/var/nix/profiles/default/bin/env "$rootfs/usr/bin/"
 
-# nix-build wants /tmp
-mkdir --parents "$rootfs/tmp"
-
-# RUN wants /bin/sh
-mkdir --parents "$rootfs/bin"
+# Docker wants /bin/sh
+$mkdir "$rootfs/bin"
 $ln /nix/var/nix/profiles/default/bin/sh "$rootfs/bin/"
 
-# https://github.com/NixOS/nix/issues/697
-mkdir --parents "$rootfs/etc/nix"
-echo 'build-users-group =' > "$rootfs/etc/nix/nix.conf"
 
+# chroot left files unreadable
+sudo chown --recursive "$USER" "$rootfs"
 
 # Pack up (Git doesn't like empty dirs like /tmp so we can't just leave rootfs
 # as is)
