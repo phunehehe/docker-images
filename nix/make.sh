@@ -13,7 +13,7 @@ mkdir='mkdir --parents'
 $mkdir "$channels_dir"
 
 nixexprs=$channels_dir/$channel
-cp --dereference --recursive "$HOME/.nix-defexpr/channels/$channel" "$nixexprs"
+cp -H --recursive "$HOME/.nix-defexpr/channels/$channel" "$nixexprs"
 
 build="nix-build --no-out-link $nixexprs --attr"
 
