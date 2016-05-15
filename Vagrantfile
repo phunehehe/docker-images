@@ -1,6 +1,8 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+codename = "xenial"
+
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
@@ -12,7 +14,7 @@ Vagrant.configure(2) do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "ubuntu/trusty64"
+  config.vm.box = "ubuntu/#{codename}64"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -66,13 +68,13 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-    echo deb https://apt.dockerproject.org/repo ubuntu-trusty main > /etc/apt/sources.list.d/docker.list
+    echo deb https://apt.dockerproject.org/repo ubuntu-#{codename} main > /etc/apt/sources.list.d/docker.list
     apt-get update
     apt-get install --yes docker-engine linux-image-extra-$(uname -r)
     apt-get purge --yes $(dpkg --list | awk '/(chef|juju|puppet)/ {print $2}')
     if ! [[ -e /swapfile ]]
     then
-      fallocate --length 10G /swapfile
+      fallocate --length 1G /swapfile
       chmod 600 /swapfile
       mkswap /swapfile
       echo /swapfile none swap defaults 0 0 >> /etc/fstab
