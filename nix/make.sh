@@ -87,6 +87,9 @@ $ln /nix/var/nix/profiles/default/bin/env "$rootfs/usr/bin/"
 $mkdir "$rootfs/bin"
 $ln /nix/var/nix/profiles/default/bin/sh "$rootfs/bin/"
 
+# Random applications want these
+echo hosts: files > "$rootfs/etc/nsswitch.conf"
+echo root:x:0:0:root:/root:/bin/sh > "$rootfs/etc/passwd"
 
 # chroot left files unreadable
 sudo chown --recursive "$USER" "$rootfs"
