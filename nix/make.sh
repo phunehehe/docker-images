@@ -101,11 +101,13 @@ tar --create --verbose --xz \
     --file "$this_dir/rootfs.tar.xz" \
     .
 
+# GIT_SSL_CAINFO is needed for 16.03 (patched in unstable)
 echo "
 FROM scratch
 ADD rootfs.tar.xz /
 ENV NIX_PATH=nixpkgs=${nixexprs/$rootfs/} \
     PATH=/nix/var/nix/profiles/default/bin \
     SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
+    GIT_SSL_CAINFO=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
     USER=root
 " > "$this_dir/Dockerfile"
