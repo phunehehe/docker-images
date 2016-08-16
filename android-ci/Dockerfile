@@ -1,7 +1,6 @@
 FROM phunehehe/nix:16.03
-RUN nix-env --file '<nixpkgs>' --install android-sdk openjdk which \
- && nix-env --file '<nixpkgs>' --install --attr stdenv.cc.cc \
- && nix-store --gc \
- && nix-store --optimize
-ENV ANDROID_HOME=/nix/var/nix/profiles/default/libexec/android-sdk-linux \
+ENV ANDROID_HOME=/root/android-sdk-linux \
+    JAVA_HOME=/nix/var/nix/profiles/default \
     LD_LIBRARY_PATH=/nix/var/nix/profiles/default/lib
+ADD ./install.sh /root/install.sh
+RUN /root/install.sh
