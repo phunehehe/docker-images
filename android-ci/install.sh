@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -efuxo pipefail
 
 # aapt wants libz.so.1 from zlib
 # gradle wants libstdc++.so.6 from stdenv.cc.cc
