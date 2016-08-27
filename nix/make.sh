@@ -2,32 +2,11 @@
 set -efuxo pipefail
 
 
-# Add nixpkgs
+run_in_chroot() {
 
-this_dir=$(cd "$(dirname "$0")" && pwd)
-rootfs=$this_dir/rootfs
-channel=$(git rev-parse --abbrev-ref HEAD)
+  rootfs=$1
+  shift 1
 
-channels_dir=$rootfs/root/channels
-mkdir='mkdir --parents'
-$mkdir "$channels_dir"
-
-nixexprs=$channels_dir/$channel
-cp -H --recursive "$HOME/.nix-defexpr/channels/$channel" "$nixexprs"
-
-build="nix-build --no-out-link $nixexprs --attr"
-
-
-# Prepare chroot
-
-# https://github.com/NixOS/nix/issues/697
-$mkdir "$rootfs/etc/nix"
-echo 'build-users-group =' > "$rootfs/etc/nix/nix.conf"
-
-# nix-build wants /tmp
-$mkdir "$rootfs/tmp"
-
-my_chroot() {
   mounts=(dev proc)
 
   for m in "${mounts[@]}"
@@ -39,75 +18,96 @@ my_chroot() {
   sudo chroot "$rootfs" "$@"
 
   for m in "${mounts[@]}"
-  do sudo umount "$rootfs/$m"
+  do
+    sudo umount "$rootfs/$m"
+    rmdir "$rootfs/$m"
   done
+
+  sudo chown --recursive "$USER" "$rootfs"
 }
 
 
-# Populate the store
+build() {
 
-cacert=$($build cacert)
+  tag=$1
+  url=$2
 
-# Nix has multiple outputs, and `out` is not always the default one
-nix=$($build nix.out)
+  ln='ln --force --symbolic'
+  mkdir='mkdir --parents'
 
-wanted_packages=(
-  $cacert
-  $nix
+  this_dir=$(cd "$(dirname "$0")" && pwd)
+  rootfs=$this_dir/$tag/rootfs
+  nixexprs=$rootfs/root/.nix-defexpr
+  store_dir=$rootfs/nix/store
 
-  # The closure for Nix includes these so we are repeating ourselves a
-  # bit to make it easier to install them further down.
-  $($build bash)
-  $($build coreutils)
-)
-
-all_packages=(
-  $(nix-store --query --requisites "${wanted_packages[@]}" \
-  | sort --unique))
-
-store_dir=$rootfs/nix/store
-$mkdir "$store_dir"
-for p in "${all_packages[@]}"
-do
-  cp --recursive "$p" "$store_dir"/
-done
-
-nix-store --export "${all_packages[@]}" \
-| my_chroot "$nix/bin/nix-store" --import
-
-my_chroot "$nix/bin/nix-env" --install "${wanted_packages[@]}"
+  nix_build="nix-build --no-out-link $nixexprs --attr"
 
 
-# (Bash) scripts want /usr/bin/env
-$mkdir "$rootfs/usr/bin"
-ln='ln --force --symbolic'
-$ln /nix/var/nix/profiles/default/bin/env "$rootfs/usr/bin/"
+  # Cleanup any previous run
+  if [[ -e $rootfs ]]
+  then
+    chmod u+w --recursive "$rootfs"
+    rm --force --recursive "$rootfs"
+  fi
 
-# Docker wants /bin/sh
-$mkdir "$rootfs/bin"
-$ln /nix/var/nix/profiles/default/bin/sh "$rootfs/bin/"
+  # Add nixpkgs
+  $mkdir "$nixexprs"
+  curl --location --silent "$url" \
+  | tar --extract --xz --directory "$nixexprs" --strip-components 1
 
-# Random applications want these
-echo hosts: files dns > "$rootfs/etc/nsswitch.conf"
-echo root:x:0:0:root:/root:/bin/sh > "$rootfs/etc/passwd"
+  # https://github.com/NixOS/nix/issues/697
+  $mkdir "$rootfs/etc/nix"
+  echo 'build-users-group =' > "$rootfs/etc/nix/nix.conf"
 
-# chroot left files unreadable
-sudo chown --recursive "$USER" "$rootfs"
+  # nix-build wants /tmp
+  $mkdir "$rootfs/tmp"
+  touch "$rootfs/tmp/.gitignore"
 
-# Pack up (Git doesn't like empty dirs like /tmp so we can't just leave rootfs
-# as is)
-tar --create --verbose --xz \
-    --directory "$rootfs" \
-    --file "$this_dir/rootfs.tar.xz" \
-    .
 
-# GIT_SSL_CAINFO is needed for 16.03 (patched in unstable)
-echo "
-FROM scratch
-ADD rootfs.tar.xz /
-ENV NIX_PATH=nixpkgs=${nixexprs/$rootfs/} \
-    PATH=/nix/var/nix/profiles/default/bin \
-    SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
-    GIT_SSL_CAINFO=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
-    USER=root
-" > "$this_dir/Dockerfile"
+  # Populate the store
+
+  # Nix has multiple outputs, and `out` is not always the default one
+  nix=$($nix_build nix.out)
+
+  wanted_packages=(
+    $($nix_build bash)
+    $($nix_build cacert)
+    $($nix_build coreutils)
+    $nix
+  )
+
+  all_packages=($(
+    nix-store --query --requisites "${wanted_packages[@]}" \
+    | sort --unique
+  ))
+
+  $mkdir "$store_dir"
+  for p in "${all_packages[@]}"
+  do
+    cp --recursive "$p" "$store_dir"/
+  done
+
+  nix-store --export "${all_packages[@]}" \
+  | run_in_chroot "$rootfs" "$nix/bin/nix-store" --import
+
+  run_in_chroot "$rootfs" "$nix/bin/nix-env" --install "${wanted_packages[@]}"
+  run_in_chroot "$rootfs" "$nix/bin/nix-store" --gc
+  run_in_chroot "$rootfs" "$nix/bin/nix-store" --optimize
+
+
+  # (Bash) scripts want /usr/bin/env
+  $mkdir "$rootfs/usr/bin"
+  $ln /nix/var/nix/profiles/default/bin/env "$rootfs/usr/bin/"
+
+  # Docker wants /bin/sh
+  $mkdir "$rootfs/bin"
+  $ln /nix/var/nix/profiles/default/bin/sh "$rootfs/bin/"
+
+  # Random applications want these
+  echo hosts: files dns > "$rootfs/etc/nsswitch.conf"
+  echo root:x:0:0:root:/root:/bin/sh > "$rootfs/etc/passwd"
+}
+
+
+build 16.03 https://nixos.org/channels/nixos-16.03/nixexprs.tar.xz
+build latest https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz
