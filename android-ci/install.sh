@@ -12,7 +12,7 @@ nix-env --set-flag priority 1 gcc
 nix-env --install --attr glibc
 ln --symbolic /nix/var/nix/profiles/default/lib /lib64
 
-for p in curl.bin gnutar gzip
+for p in curl gnutar gzip
 do
     PATH=$(nix-build '<nixpkgs>' --attr $p)/bin:$PATH
 done
