@@ -106,6 +106,10 @@ build() {
   # Random applications want these
   echo hosts: files dns > "$rootfs/etc/nsswitch.conf"
   echo root:x:0:0:root:/root:/bin/sh > "$rootfs/etc/passwd"
+
+  # Because who wants builds to fail on unfree stuff anyway
+  mkdir "$rootfs/root/.nixpkgs"
+  echo '{ allowUnfree = true; }' > "$rootfs/root/.nixpkgs/config.nix"
 }
 
 
