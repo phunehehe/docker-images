@@ -37,7 +37,7 @@ build() {
 
   this_dir=$(cd "$(dirname "$0")" && pwd)
   rootfs=$this_dir/$tag/rootfs
-  nixexprs=$rootfs/root/.nix-defexpr
+  nixexprs=$rootfs/root/.nix-defexpr/nixpkgs
   store_dir=$rootfs/nix/store
 
   nix_build="nix-build --no-out-link $nixexprs --attr"
@@ -110,8 +110,11 @@ build() {
   # Because who wants builds to fail on unfree stuff anyway
   mkdir "$rootfs/root/.nixpkgs"
   echo '{ allowUnfree = true; }' > "$rootfs/root/.nixpkgs/config.nix"
+
+  [[ -f $this_dir/$tag/Dockerfile ]] \
+    || cp "$this_dir/latest/Dockerfile" "$this_dir/$tag/Dockerfile"
 }
 
 
-build 16.09 https://nixos.org/channels/nixos-16.09/nixexprs.tar.xz
 build latest https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz
+build 16.09 https://nixos.org/channels/nixos-16.09/nixexprs.tar.xz
