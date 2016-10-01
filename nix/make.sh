@@ -37,7 +37,7 @@ build() {
 
   this_dir=$(cd "$(dirname "$0")" && pwd)
   rootfs=$this_dir/$tag/rootfs
-  nixexprs=$rootfs/root/.nix-defexpr/nixpkgs
+  nixexprs=$rootfs/root/.nix-defexpr
   store_dir=$rootfs/nix/store
 
   nix_build="nix-build --no-out-link $nixexprs --attr"
