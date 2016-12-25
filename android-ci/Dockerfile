@@ -12,7 +12,7 @@ COPY default.nix install.sh /root/
 ARG NIX_OPTIONS=
 
 # Use this to speed up test builds with a local HTTP cache
-# docker build --build-arg SDK_URL=http://10.0.2.2:8080/android-sdk_r24.4.1-linux.tgz .
-ARG SDK_URL=https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz
+# docker build --build-arg SDK_URL=http://10.0.2.2:8080/tools_r25.2.3-linux.zip .
+ARG SDK_URL=https://dl.google.com/android/repository/tools_r25.2.3-linux.zip
 
 RUN /root/install.sh
