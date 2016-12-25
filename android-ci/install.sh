@@ -24,8 +24,8 @@ rm $zip
 
 
 echo y \
-| "$ANDROID_HOME/tools/android" update sdk --no-ui --all \
-    --filter android-24,build-tools-24.0.1,platform-tools,extra-android-m2repository
+| "$ANDROID_HOME/tools/android" update sdk --no-ui \
+    --filter android-25,build-tools-25.0.2,extra-android-m2repository,platform-tools
 
 
 nix-store --gc
