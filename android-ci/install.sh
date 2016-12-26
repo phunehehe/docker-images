@@ -22,9 +22,7 @@ curl --silent "$SDK_URL" --output $zip
 unzip $zip -d $ANDROID_HOME
 rm $zip
 
-
-echo y \
-| "$ANDROID_HOME/tools/android" update sdk --no-ui \
+echo y | android update sdk --no-ui \
     --filter extra-android-m2repository,platform-tools
 
 

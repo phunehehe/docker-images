@@ -5,6 +5,9 @@ ENV ANDROID_HOME=/root/Android/Sdk/tools \
     JAVA_HOME=/nix/var/nix/profiles/default \
     LD_LIBRARY_PATH=/nix/var/nix/profiles/default/lib
 
+# This needs ANDROID_HOME above to take effect first
+ENV PATH=$ANDROID_HOME/tools:$PATH
+
 COPY default.nix install.sh /root/
 
 # Use this to speed up test builds with a local cache
