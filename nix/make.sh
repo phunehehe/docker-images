@@ -117,4 +117,4 @@ build() {
 
 
 build latest https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz
-build 16.09 https://nixos.org/channels/nixos-16.09/nixexprs.tar.xz
+build 17.03 https://nixos.org/channels/nixos-17.03/nixexprs.tar.xz
