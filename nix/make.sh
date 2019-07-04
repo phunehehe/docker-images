@@ -70,16 +70,16 @@ build() {
   nix=$($nix_build nix.out)
 
   wanted_packages=(
-    $($nix_build bash)
-    $($nix_build cacert)
-    $($nix_build coreutils)
-    $nix
+    "$($nix_build bash)"
+    "$($nix_build cacert)"
+    "$($nix_build coreutils)"
+    "$nix"
   )
 
-  all_packages=($(
+  mapfile -t all_packages < <(
     nix-store --query --requisites "${wanted_packages[@]}" \
     | sort --unique
-  ))
+  )
 
   $mkdir "$store_dir"
   for p in "${all_packages[@]}"
@@ -90,7 +90,10 @@ build() {
   nix-store --export "${all_packages[@]}" \
   | run_in_chroot "$rootfs" "$nix/bin/nix-store" --import
 
-  run_in_chroot "$rootfs" "$nix/bin/nix-env" --install "${wanted_packages[@]}"
+  # Disable sandbox to avoid https://github.com/NixOS/nix/issues/2633
+  # Suggested solutions don't seem to work
+  run_in_chroot "$rootfs" "$nix/bin/nix-env" --option sandbox false --install "${wanted_packages[@]}"
+
   run_in_chroot "$rootfs" "$nix/bin/nix-store" --gc
   run_in_chroot "$rootfs" "$nix/bin/nix-store" --optimize
 
@@ -117,4 +120,4 @@ build() {
 
 
 build latest https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz
-build 18.03 https://nixos.org/channels/nixos-18.03/nixexprs.tar.xz
+build 19.03 https://nixos.org/channels/nixos-19.03/nixexprs.tar.xz
