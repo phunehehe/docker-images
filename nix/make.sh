@@ -107,8 +107,8 @@ build() {
   $ln /nix/var/nix/profiles/default/bin/sh "$rootfs/bin/"
 
   # Random applications want these
-  echo hosts: files dns > "$rootfs/etc/nsswitch.conf"
-  echo root:x:0:0:root:/root:/bin/sh > "$rootfs/etc/passwd"
+  touch "$rootfs/etc/nsswitch.conf"
+  touch "$rootfs/etc/services"
 
   # Because who wants builds to fail on unfree stuff anyway
   mkdir "$rootfs/root/.nixpkgs"
