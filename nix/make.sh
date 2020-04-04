@@ -57,12 +57,7 @@ build() {
 
   # Clean up any previous run
   unmount_all "$rootfs"
-  if [[ -e $rootfs ]]
-  then
-    sudo chown --recursive "$USER" "$rootfs"
-    chmod u+w --recursive "$rootfs"
-    rm --force --recursive "$rootfs"
-  fi
+  [[ -e $rootfs ]] && sudo rm --recursive "$rootfs"
 
   # Add nixpkgs
   $mkdir "$nixexprs"
@@ -128,8 +123,11 @@ build() {
   $mkdir "$rootfs/root/.nixpkgs"
   echo '{ allowUnfree = true; }' > "$rootfs/root/.nixpkgs/config.nix"
 
-  [[ -f $this_dir/$tag/Dockerfile ]] \
-    || cp "$this_dir/latest/Dockerfile" "$this_dir/$tag/Dockerfile"
+  if [[ ! -f $this_dir/$tag/Dockerfile ]]
+  then cp "$this_dir/latest/Dockerfile" "$this_dir/$tag/Dockerfile"
+  fi
+
+  sudo chown --recursive "$USER" "$rootfs"
 }
 
 
