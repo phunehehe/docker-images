@@ -2,12 +2,35 @@
 set -efuxo pipefail
 
 
-run_in_chroot() {
+ln='ln --force --symbolic'
+mkdir='mkdir --parents'
 
+mounts=(dev dev/pts proc)
+
+
+unmount_all() {
+  rootfs=$1
+  [[ -e $rootfs ]] || return 0
+
+  # https://stackoverflow.com/a/11789688/168034
+  IFS=$'\n'
+  mapfile -t sorted < <(sort --reverse <<<"${mounts[*]}")
+  unset IFS
+
+  for m in "${sorted[@]}"
+  do
+    d="$rootfs/$m"
+    [[ -e $d ]] || continue
+
+    findmnt "$d" && sudo umount "$d"
+    [[ -z $(find "$d" -mindepth 1) ]] || exit 1
+  done
+}
+
+
+run_in_chroot() {
   rootfs=$1
   shift 1
-
-  mounts=(dev proc)
 
   for m in "${mounts[@]}"
   do
@@ -16,24 +39,13 @@ run_in_chroot() {
   done
 
   sudo chroot "$rootfs" "$@"
-
-  for m in "${mounts[@]}"
-  do
-    sudo umount "$rootfs/$m"
-    rmdir "$rootfs/$m"
-  done
-
-  sudo chown --recursive "$USER" "$rootfs"
+  unmount_all "$rootfs"
 }
 
 
 build() {
-
   tag=$1
   url=$2
-
-  ln='ln --force --symbolic'
-  mkdir='mkdir --parents'
 
   this_dir=$(cd "$(dirname "$0")" && pwd)
   rootfs=$this_dir/$tag/rootfs
@@ -43,9 +55,11 @@ build() {
   nix_build="nix-build --no-out-link $nixexprs --attr"
 
 
-  # Cleanup any previous run
+  # Clean up any previous run
+  unmount_all "$rootfs"
   if [[ -e $rootfs ]]
   then
+    sudo chown --recursive "$USER" "$rootfs"
     chmod u+w --recursive "$rootfs"
     rm --force --recursive "$rootfs"
   fi
@@ -111,7 +125,7 @@ build() {
   touch "$rootfs/etc/services"
 
   # Because who wants builds to fail on unfree stuff anyway
-  mkdir "$rootfs/root/.nixpkgs"
+  $mkdir "$rootfs/root/.nixpkgs"
   echo '{ allowUnfree = true; }' > "$rootfs/root/.nixpkgs/config.nix"
 
   [[ -f $this_dir/$tag/Dockerfile ]] \
@@ -120,4 +134,4 @@ build() {
 
 
 build latest https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz
-build 19.09 https://nixos.org/channels/nixos-19.09/nixexprs.tar.xz
+build 20.03 https://nixos.org/channels/nixos-20.03/nixexprs.tar.xz
