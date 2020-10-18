@@ -1,0 +1,3 @@
+#!/bin/sh
+PATH="/nix/store/ljjm1r3hn8wmlh5gp38vms13hipjmygy-gzip-1.10/bin:$PATH"
+exec zgrep -F "$@"

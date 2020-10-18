@@ -1,0 +1,3 @@
+export NIX_SSL_CERT_FILE=/nix/store/f0f9dgy6r5mgqmjb7yzml0px729p93lv-nss-cacert-3.56/etc/ssl/certs/ca-bundle.crt
+# left for compatibility
+export SSL_CERT_FILE=/nix/store/f0f9dgy6r5mgqmjb7yzml0px729p93lv-nss-cacert-3.56/etc/ssl/certs/ca-bundle.crt
