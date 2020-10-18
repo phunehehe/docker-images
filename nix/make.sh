@@ -132,4 +132,4 @@ build() {
 
 
 build latest https://nixos.org/channels/nixpkgs-unstable/nixexprs.tar.xz
-build 20.03 https://nixos.org/channels/nixos-20.03/nixexprs.tar.xz
+build 20.09 https://nixos.org/channels/nixos-20.09/nixexprs.tar.xz
